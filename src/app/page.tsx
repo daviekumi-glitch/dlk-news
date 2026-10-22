@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, Globe2, Menu, RefreshCw, Search, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
+import { BottomNav } from "@/components/site/bottom-nav";
+import { ArrowUpRight, Globe2, Menu, RefreshCw, Search, ShieldCheck, Sparkles, X } from "lucide-react";
 
 const API = (process.env.NEXT_PUBLIC_BASE44_APP_URL || "https://solene-087bb2e2.base44.app").replace(/\/$/, "");
 const CATEGORIES = ["All", "Africa", "World", "Conflict", "Crime", "Investigations"];
@@ -16,6 +17,7 @@ function timeAgo(value: string) {
 function SourceMark({ source }: { source: string }) {
   return <span className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-black uppercase text-primary">{source.slice(0, 2)}</span>;
 }
+
 
 export default function HomePage() {
   const [stories, setStories] = React.useState<Story[]>([]);
@@ -32,13 +34,21 @@ export default function HomePage() {
     setError("");
     try {
       const suffix = selected === "All" ? "" : `?category=${encodeURIComponent(selected)}`;
-      const response = await fetch(`${API}/functions/newsFeed${suffix}`, { cache: "no-store" });
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 12000);
+      const response = await fetch(`${API}/functions/newsFeed${suffix}`, { cache: "no-store", signal: controller.signal, headers: { Accept: "application/json" } });
+      window.clearTimeout(timeout);
       if (!response.ok) throw new Error("The live desk is temporarily unavailable.");
-      const data = await response.json();
-      setStories(data.stories ?? []);
+      const data = await response.json() as { stories?: Story[]; live?: boolean };
+      const nextStories = Array.isArray(data.stories) ? data.stories : [];
+      setStories(nextStories);
       setLive(Boolean(data.live));
+      window.localStorage.setItem("dlk:last-feed", JSON.stringify({ stories: nextStories, savedAt: Date.now() }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The live desk is temporarily unavailable.");
+      const cached = window.localStorage.getItem("dlk:last-feed");
+      if (cached) {
+        try { const parsed = JSON.parse(cached) as { stories?: Story[] }; setStories(parsed.stories ?? []); setError("Showing the last verified feed while we reconnect."); } catch { setError("The live desk is temporarily unavailable."); }
+      } else setError(cause instanceof Error && cause.name === "AbortError" ? "The newsroom is taking longer than usual. Try again." : "The live desk is temporarily unavailable.");
       setLive(false);
     } finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -49,7 +59,7 @@ export default function HomePage() {
   const sources = new Set(filtered.map((story) => story.source)).size;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="min-h-screen overflow-hidden bg-background pb-28 text-foreground md:pb-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[620px] editorial-grid opacity-70" />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-5 px-4 sm:px-6">
@@ -74,6 +84,7 @@ export default function HomePage() {
 
       <section className="relative z-10 border-y border-border bg-card/40"><div className="mx-auto grid max-w-7xl gap-5 px-4 py-10 sm:grid-cols-3 sm:px-6"><div className="rounded-2xl border border-border bg-background/60 p-5"><Globe2 className="size-5 text-primary" /><h3 className="mt-5 font-semibold">Local context, global view</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Malawi first, with the wider African and global picture always in frame.</p></div><div className="rounded-2xl border border-border bg-background/60 p-5"><ShieldCheck className="size-5 text-primary" /><h3 className="mt-5 font-semibold">Evidence over noise</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Stories link back to publishers and public records. Rumor is never presented as fact.</p></div><div className="rounded-2xl border border-border bg-background/60 p-5"><Sparkles className="size-5 text-primary" /><h3 className="mt-5 font-semibold">Built as a newsroom</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Country desks, leader dossiers and explainers are being built on this live foundation.</p></div></div></section>
       <footer className="relative z-10 mx-auto flex max-w-7xl flex-col gap-3 px-4 py-10 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><span className="font-semibold text-foreground">D. L. K</span><span className="mx-2">/</span>News that respects your attention</div><div className="flex items-center gap-4"><Link href="/about" className="hover:text-foreground">Editorial standard</Link><span>{live ? "Live feed connected" : "Feed reconnecting"}</span></div></footer>
+      <BottomNav />
     </main>
   );
 }
