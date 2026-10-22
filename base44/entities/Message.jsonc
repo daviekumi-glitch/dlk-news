@@ -1,0 +1,22 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "conversation_id": { "type": "string" },
+    "role": { "type": "string", "enum": ["system", "user", "assistant", "tool"] },
+    "content": { "type": "string", "default": "" },
+    "model": { "type": "string" },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "name": { "type": "string" }, "mime": { "type": "string" },
+          "size": { "type": "number" }, "url": { "type": "string" }, "text": { "type": "string" }
+        }
+      }
+    },
+    "status": { "type": "string", "enum": ["streaming", "complete", "error"], "default": "complete" }
+  },
+  "required": ["conversation_id", "role"]
+}

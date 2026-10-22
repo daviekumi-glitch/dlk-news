@@ -1,0 +1,15 @@
+{
+  "name": "ToolCall",
+  "type": "object",
+  "properties": {
+    "message_id": { "type": "string" },
+    "conversation_id": { "type": "string" },
+    "name": { "type": "string" },
+    "arguments": { "type": "object" },
+    "result": { "type": "object" },
+    "status": { "type": "string", "enum": ["running", "success", "error"], "default": "running" },
+    "error": { "type": "string" },
+    "duration_ms": { "type": "number" }
+  },
+  "required": ["message_id", "name"]
+}

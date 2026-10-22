@@ -1,0 +1,101 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// Release signing
+// ---------------------------------------------------------------------------
+// The keystore and its passwords are NEVER committed. They are supplied at
+// build time through four environment variables:
+//
+//   ANDROID_KEYSTORE_PATH      path to the .keystore file
+//   ANDROID_KEYSTORE_PASSWORD  keystore password
+//   ANDROID_KEY_ALIAS          key alias
+//   ANDROID_KEY_PASSWORD       key password
+//
+// See README -> Android -> Signing. When the variables are absent the release
+// variant is simply left unsigned, so a fresh clone can still run
+// `./gradlew assembleRelease` without secrets.
+def signingProperties = [
+    storeFile    : System.getenv('ANDROID_KEYSTORE_PATH'),
+    storePassword: System.getenv('ANDROID_KEYSTORE_PASSWORD'),
+    keyAlias     : System.getenv('ANDROID_KEY_ALIAS'),
+    keyPassword  : System.getenv('ANDROID_KEY_PASSWORD'),
+]
+
+def hasSigning = signingProperties.storeFile != null &&
+        file(signingProperties.storeFile).exists() &&
+        signingProperties.storePassword != null &&
+        signingProperties.keyAlias != null &&
+        signingProperties.keyPassword != null
+
+android {
+    namespace "com.daviekumi.agentmobile"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.daviekumi.agentmobile"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "0.1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        if (hasSigning) {
+            release {
+                storeFile file(signingProperties.storeFile)
+                storePassword signingProperties.storePassword
+                keyAlias signingProperties.keyAlias
+                keyPassword signingProperties.keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

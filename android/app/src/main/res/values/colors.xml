@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Brand palette for native window chrome.
+
+      Kept in sync by hand with the design tokens in src/app/globals.css:
+        background  #141419
+        brand/iris  #7c5cff
+        brand dark  #6d4aff
+    -->
+    <color name="colorPrimary">#FF7C5CFF</color>
+    <color name="colorPrimaryDark">#FF141419</color>
+    <color name="colorAccent">#FFA78BFA</color>
+
+    <!-- Matches the splash drawable's background so there is no colour pop
+         between the launch window and the image. -->
+    <color name="splashBackground">#FF141419</color>
+</resources>

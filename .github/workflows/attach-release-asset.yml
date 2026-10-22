@@ -1,0 +1,143 @@
+name: Attach release asset
+
+# Attaches an already-built APK to a GitHub Release.
+#
+# Why this exists: `android-release.yml` builds and signs the APK correctly,
+# but the automation environment used to develop this repo cannot push binary
+# release assets through the GitHub API -- only text blobs are available, and
+# attaching a release asset requires a binary multipart transfer. Rather than
+# leave releases without their artifact, this workflow does the upload from a
+# real runner using the built-in `gh` CLI.
+#
+# It downloads from a public URL, so it works with an APK produced anywhere:
+# a local Gradle build, a Drive upload, or another workflow's artifact.
+#
+# NOTE on hosted links: a plain `drive.google.com/uc?id=...&export=download`
+# URL does NOT return the file for binaries that Drive decides to scan. It
+# answers HTTP 200 with a small "Virus scan warning" HTML page, so `curl -f`
+# succeeds and the failure only shows up later as an md5 mismatch. Use the
+# `drive.usercontent.google.com/download?...&confirm=t` form instead -- that
+# host serves the bytes directly.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the asset to"
+        required: true
+        type: string
+        default: "v0.1.0"
+      asset_url:
+        description: "Direct download URL of the APK (must serve bytes, not an HTML page)"
+        required: true
+        type: string
+        default: "https://drive.usercontent.google.com/download?id=1F2mTgwS8JOfv7GSeCv5h8mzytOqLXIrf&export=download&confirm=t"
+      asset_name:
+        description: "Filename to publish the asset under"
+        required: true
+        type: string
+        default: "agent-mobile-v0.1.0-release.apk"
+      expected_md5:
+        description: "Expected md5 of the APK; leave empty to skip the check"
+        required: false
+        type: string
+        default: "f3359c691b9e657a728af0bdfa930537"
+
+concurrency:
+  group: attach-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  attach:
+    name: Attach APK to release ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download the APK
+        env:
+          ASSET_URL: ${{ inputs.asset_url }}
+          ASSET_NAME: ${{ inputs.asset_name }}
+        run: |
+          set -euo pipefail
+
+          # -f would not be enough here: an HTML interstitial is served with
+          # HTTP 200, so it passes. Capture the content type too and reject
+          # anything that is not the file itself.
+          curl -fSL --retry 3 --retry-delay 2 \
+            -H 'User-Agent: Mozilla/5.0 (agent-mobile release)' \
+            -D headers.txt \
+            -o "$ASSET_NAME" "$ASSET_URL"
+
+          ctype=$(grep -i '^content-type:' headers.txt | tail -1 | tr -d '\r' | cut -d' ' -f2-)
+          echo "content-type: ${ctype:-<absent>}"
+          echo "size        : $(stat -c '%s' "$ASSET_NAME") bytes"
+          ls -l "$ASSET_NAME"
+
+          case "$ctype" in
+            *text/html*)
+              echo "::error::The URL returned HTML, not the APK."
+              echo "::error::Hosted links often interpose a consent/scan page."
+              echo "::error::Use a URL that serves the bytes directly."
+              exit 1
+              ;;
+          esac
+
+      # Hosted download links sometimes answer with a login or consent HTML
+      # page instead of the file. Checking the md5 and the zip structure
+      # together means a redirect page can never be published as "the APK".
+      - name: Verify the download is really an APK
+        env:
+          ASSET_NAME: ${{ inputs.asset_name }}
+          EXPECTED_MD5: ${{ inputs.expected_md5 }}
+        run: |
+          set -euo pipefail
+
+          actual=$(md5sum "$ASSET_NAME" | awk '{print $1}')
+          echo "md5    : $actual"
+          echo "size   : $(stat -c '%s' "$ASSET_NAME") bytes"
+
+          if [ -n "$EXPECTED_MD5" ] && [ "$actual" != "$EXPECTED_MD5" ]; then
+            echo "::error::md5 mismatch. Expected $EXPECTED_MD5 but got $actual."
+            exit 1
+          fi
+
+          if ! unzip -t "$ASSET_NAME" > /dev/null 2>&1; then
+            echo "::error::$ASSET_NAME is not a valid zip/APK archive."
+            echo "::error::The URL probably returned an HTML page. Use a direct link."
+            exit 1
+          fi
+
+          entries=$(unzip -l "$ASSET_NAME" | tail -1 | awk '{print $2}')
+          echo "entries: $entries"
+
+          # A Capacitor APK always carries these. Their absence means we are
+          # looking at some other zip, not the app.
+          for f in AndroidManifest.xml classes.dex resources.arsc; do
+            if unzip -l "$ASSET_NAME" | grep -q "$f"; then
+              echo "ok     : $f"
+            else
+              echo "::error::Missing $f -- this does not look like an Android package."
+              exit 1
+            fi
+          done
+
+      - name: Attach the asset to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          ASSET_NAME: ${{ inputs.asset_name }}
+        run: |
+          set -euo pipefail
+
+          # --clobber keeps re-runs idempotent instead of failing on a
+          # duplicate filename.
+          gh release upload "$TAG" "$ASSET_NAME" --clobber --repo "$GITHUB_REPOSITORY"
+
+          echo "Assets now on $TAG:"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '.assets[] | "  \(.name)  \(.size) bytes  \(.url)"'

@@ -1,0 +1,455 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Agent Mobile — design tokens
+   Palette: warm graphite neutrals + a vivid iris accent.
+   Deliberately NOT the stock shadcn slate theme.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 40 20% 99%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    /* Sidebar — a touch warmer/darker than the canvas */
+    --sidebar: 40 16% 96.5%;
+    --sidebar-foreground: 240 8% 22%;
+    --sidebar-accent: 40 14% 92%;
+    --sidebar-accent-foreground: 240 10% 12%;
+    --sidebar-border: 40 12% 89%;
+
+    /* Brand — iris */
+    --brand: 258 88% 58%;
+    --brand-foreground: 0 0% 100%;
+    --brand-soft: 258 90% 96%;
+
+    --primary: 258 88% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 14% 94%;
+    --secondary-foreground: 240 10% 18%;
+
+    --muted: 40 14% 95%;
+    --muted-foreground: 240 5% 45%;
+
+    --accent: 258 60% 96%;
+    --accent-foreground: 258 60% 32%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 12% 89%;
+    --input: 40 12% 88%;
+    --ring: 258 88% 58%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 12% 7%;
+    --foreground: 40 20% 96%;
+
+    --card: 240 11% 10%;
+    --card-foreground: 40 20% 96%;
+
+    --popover: 240 11% 11%;
+    --popover-foreground: 40 20% 96%;
+
+    --sidebar: 240 12% 9%;
+    --sidebar-foreground: 40 12% 88%;
+    --sidebar-accent: 240 10% 15%;
+    --sidebar-accent-foreground: 40 20% 98%;
+    --sidebar-border: 240 9% 17%;
+
+    --brand: 258 90% 68%;
+    --brand-foreground: 240 12% 8%;
+    --brand-soft: 258 40% 18%;
+
+    --primary: 258 90% 68%;
+    --primary-foreground: 240 12% 8%;
+
+    --secondary: 240 9% 16%;
+    --secondary-foreground: 40 20% 96%;
+
+    --muted: 240 9% 15%;
+    --muted-foreground: 240 6% 62%;
+
+    --accent: 258 30% 20%;
+    --accent-foreground: 258 80% 88%;
+
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 9% 18%;
+    --input: 240 9% 20%;
+    --ring: 258 90% 68%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Type hierarchy helpers */
+  .text-display {
+    @apply text-2xl font-semibold tracking-tight sm:text-3xl;
+  }
+  .text-section {
+    @apply text-base font-semibold tracking-tight;
+  }
+  .text-caption {
+    @apply text-xs text-muted-foreground;
+  }
+
+  ::selection {
+    background: hsl(var(--brand) / 0.22);
+  }
+}
+
+/* ==========================================================================
+   Scrollbars
+   ========================================================================== */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+    background-clip: content-box;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe-area padding for mobile-first layout */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--brand)) 0%,
+      hsl(280 85% 62%) 50%,
+      hsl(320 80% 62%) 100%
+    );
+  }
+
+  .brand-text-gradient {
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--brand)) 0%,
+      hsl(285 85% 60%) 55%,
+      hsl(325 80% 60%) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glass {
+    background-color: hsl(var(--background) / 0.72);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+  }
+
+  .grid-noise {
+    background-image:
+      radial-gradient(hsl(var(--border) / 0.7) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
+
+/* ==========================================================================
+   Markdown / prose rendering inside chat bubbles
+   ========================================================================== */
+.chat-prose {
+  @apply text-[0.9375rem] leading-7;
+}
+.chat-prose > * + * {
+  @apply mt-4;
+}
+.chat-prose h1 {
+  @apply mt-6 text-xl font-semibold tracking-tight;
+}
+.chat-prose h2 {
+  @apply mt-6 text-lg font-semibold tracking-tight;
+}
+.chat-prose h3 {
+  @apply mt-5 text-base font-semibold tracking-tight;
+}
+.chat-prose h4 {
+  @apply mt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground;
+}
+.chat-prose p {
+  @apply leading-7;
+}
+.chat-prose a {
+  @apply font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand;
+}
+.chat-prose strong {
+  @apply font-semibold text-foreground;
+}
+.chat-prose ul {
+  @apply my-4 list-disc space-y-2 pl-5 marker:text-muted-foreground;
+}
+.chat-prose ol {
+  @apply my-4 list-decimal space-y-2 pl-5 marker:text-muted-foreground;
+}
+.chat-prose li > ul,
+.chat-prose li > ol {
+  @apply my-2;
+}
+.chat-prose blockquote {
+  @apply border-l-2 border-brand/40 pl-4 italic text-muted-foreground;
+}
+.chat-prose hr {
+  @apply my-6 border-border;
+}
+.chat-prose table {
+  @apply my-4 w-full border-collapse overflow-hidden rounded-lg border text-sm;
+}
+.chat-prose thead {
+  @apply bg-muted/60;
+}
+.chat-prose th {
+  @apply border-b px-3 py-2 text-left font-semibold;
+}
+.chat-prose td {
+  @apply border-b px-3 py-2 align-top;
+}
+.chat-prose tr:last-child td {
+  @apply border-b-0;
+}
+.chat-prose :not(pre) > code {
+  @apply rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.8125rem] font-medium;
+}
+.chat-prose pre {
+  @apply m-0 overflow-x-auto bg-transparent p-0;
+}
+.chat-prose pre code {
+  @apply block bg-transparent p-0 font-mono text-[0.8125rem] leading-6;
+}
+
+/* ==========================================================================
+   Syntax highlighting (highlight.js) — themed to our tokens
+   ========================================================================== */
+.hljs {
+  color: hsl(var(--foreground));
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-doctag,
+.hljs-type,
+.hljs-name,
+.hljs-strong {
+  color: hsl(258 80% 62%);
+  font-weight: 600;
+}
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-literal,
+.dark .hljs-section,
+.dark .hljs-doctag,
+.dark .hljs-type,
+.dark .hljs-name,
+.dark .hljs-strong {
+  color: hsl(258 90% 76%);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string {
+  color: hsl(160 60% 34%);
+}
+.dark .hljs-string,
+.dark .hljs-regexp,
+.dark .hljs-addition,
+.dark .hljs-attribute,
+.dark .hljs-meta .hljs-string {
+  color: hsl(158 62% 62%);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-link,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: hsl(24 80% 45%);
+}
+.dark .hljs-number,
+.dark .hljs-symbol,
+.dark .hljs-bullet,
+.dark .hljs-variable,
+.dark .hljs-template-variable,
+.dark .hljs-link,
+.dark .hljs-selector-attr,
+.dark .hljs-selector-pseudo {
+  color: hsl(28 85% 66%);
+}
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: hsl(210 80% 45%);
+  font-weight: 600;
+}
+.dark .hljs-title,
+.dark .hljs-title.class_,
+.dark .hljs-title.function_ {
+  color: hsl(205 85% 70%);
+}
+.hljs-built_in,
+.hljs-builtin-name {
+  color: hsl(190 70% 38%);
+}
+.dark .hljs-built_in,
+.dark .hljs-builtin-name {
+  color: hsl(188 70% 62%);
+}
+.hljs-deletion {
+  color: hsl(var(--destructive));
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+
+
+/* ==========================================================================
+   Material 3 "premium" layer — elevation, state layers, spring feedback
+   ========================================================================== */
+@layer utilities {
+  /* MD3 elevation levels (soft, layered umbra) */
+  .elev-1 {
+    box-shadow:
+      0 1px 2px hsl(240 12% 8% / 0.06),
+      0 1px 3px 1px hsl(240 12% 8% / 0.05);
+  }
+  .elev-2 {
+    box-shadow:
+      0 1px 2px hsl(240 12% 8% / 0.08),
+      0 2px 6px 2px hsl(240 12% 8% / 0.06);
+  }
+  .elev-3 {
+    box-shadow:
+      0 4px 8px 3px hsl(240 12% 8% / 0.07),
+      0 1px 3px hsl(240 12% 8% / 0.09);
+  }
+  .dark .elev-1 {
+    box-shadow:
+      0 1px 2px hsl(0 0% 0% / 0.4),
+      0 1px 3px 1px hsl(0 0% 0% / 0.3);
+  }
+  .dark .elev-2 {
+    box-shadow:
+      0 1px 2px hsl(0 0% 0% / 0.45),
+      0 2px 6px 2px hsl(0 0% 0% / 0.35);
+  }
+  .dark .elev-3 {
+    box-shadow:
+      0 4px 8px 3px hsl(0 0% 0% / 0.4),
+      0 1px 3px hsl(0 0% 0% / 0.45);
+  }
+
+  /* Flutter-like press feedback: everything tappable dips slightly. */
+  .press {
+    transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1),
+      box-shadow 0.18s cubic-bezier(0.2, 0, 0, 1),
+      background-color 0.18s cubic-bezier(0.2, 0, 0, 1),
+      border-color 0.18s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+  .lift {
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.22s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Brand glow for the send FAB and primary surfaces */
+  .glow-brand {
+    box-shadow: 0 2px 12px -2px hsl(var(--brand) / 0.45),
+      0 1px 3px hsl(240 12% 8% / 0.12);
+  }
+
+  /* Stagger helpers for spring entrances */
+  .stagger-1 { animation-delay: 0.04s; }
+  .stagger-2 { animation-delay: 0.10s; }
+  .stagger-3 { animation-delay: 0.16s; }
+  .stagger-4 { animation-delay: 0.22s; }
+  .stagger-5 { animation-delay: 0.28s; }
+  .stagger-6 { animation-delay: 0.34s; }
+
+  /* Rubber-band page scroll containment (Android feel) */
+  .scroll-contain {
+    overscroll-behavior: contain;
+  }
+}
+
+/* Respect the OS motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

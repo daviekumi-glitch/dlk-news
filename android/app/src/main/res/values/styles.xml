@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Theme palette. Mirrors the design tokens in src/app/globals.css so the
+      native window chrome, the splash screen and the web UI share one palette.
+        background surface : #141419
+        brand accent       : #7c5cff
+
+      AppTheme.NoActionBar inherits DayNight and declares no action bar, which is
+      what Capacitor's BridgeActivity expects.
+    -->
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+    </style>
+
+
+    <!--
+      Launch theme.
+
+      The window background matches the splash artwork's own background, so the
+      very first frame is already the right colour and there is no white flash
+      before the image appears. windowSplashScreenAnimatedIcon is left unset on
+      purpose: the splash drawable already contains the logotype, and layering
+      the launcher icon on top of it would double the mark.
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+</resources>

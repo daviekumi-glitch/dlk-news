@@ -1,0 +1,13 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "default": "New chat" },
+    "model": { "type": "string", "default": "gpt_5_mini" },
+    "system_prompt": { "type": "string" },
+    "pinned": { "type": "boolean", "default": false },
+    "archived": { "type": "boolean", "default": false },
+    "last_message_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["title"]
+}
