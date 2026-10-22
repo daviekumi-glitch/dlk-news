@@ -11,6 +11,8 @@ type Story = {
 };
 
 type Feed = { source: string; url: string; category: string };
+
+let cache: { stories: Story[]; fetchedAt: string; expiresAt: number } | null = null;
 const FEEDS: Feed[] = [
   { source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", category: "World" },
   { source: "BBC Africa", url: "https://feeds.bbci.co.uk/news/world/africa/rss.xml", category: "Africa" },
@@ -48,10 +50,19 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, OPTIONS" } });
   const url = new URL(request.url);
   const requestedCategory = url.searchParams.get("category")?.toLowerCase();
-  const results = (await Promise.all(FEEDS.map(loadFeed))).flat();
-  const unique = [...new Map(results.map((story) => [story.id, story])).values()]
-    .filter((story) => !requestedCategory || story.category.toLowerCase() === requestedCategory)
-    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
-    .slice(0, 40);
-  return Response.json({ stories: unique, fetchedAt: new Date().toISOString(), sources: FEEDS.length, live: results.length > 0 }, { headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" } });
+  let allStories: Story[];
+  let fetchedAt: string;
+  if (cache && cache.expiresAt > Date.now()) {
+    allStories = cache.stories;
+    fetchedAt = cache.fetchedAt;
+  } else {
+    const results = (await Promise.all(FEEDS.map(loadFeed))).flat();
+    allStories = [...new Map(results.map((story) => [story.id, story])).values()]
+      .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+      .slice(0, 40);
+    fetchedAt = new Date().toISOString();
+    cache = { stories: allStories, fetchedAt, expiresAt: Date.now() + 5 * 60 * 1000 };
+  }
+  const stories = allStories.filter((story) => !requestedCategory || story.category.toLowerCase() === requestedCategory);
+  return Response.json({ stories, fetchedAt, sources: FEEDS.length, live: allStories.length > 0 }, { headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" } });
 });
